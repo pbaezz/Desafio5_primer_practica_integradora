@@ -1,37 +1,76 @@
-const socket = io()
+const socketClient=io()
+const nombreUsuario=document.getElementById("nombreusuario")
+const formulario=document.getElementById("formulario")
+const inputmensaje=document.getElementById("mensaje")
+const chat=document.getElementById("chat")
 
-let user
+let usuario=null
 
-Swal.fire ({
-    title: 'Identificate',
-    input:'text',
-    text: 'Ingresa Usuario para ingresar al chat',
-    inputValidator: value => {
-        return !value && 'Necesitas ingresar el nombre usuario para continuar'
-    },
-    allowOutsideClick:false
-}).then(result =>{
-    user=result.value
-    console.log(user)
-})
-
-const chatbox = document.querySelector('#chatbox')
-chatbox.addEventListener('keyup', async (eve)=>{
-    if(eve.key==='Enter'){
-        if(chatbox.value.trim().length > 0){
-            socket.emit('message', {user, message: chatbox.value})
-            chatbox.value = ''
+if(!usuario){
+    Swal.fire({
+        title:"Bienvenido a Nuestro Sitio de Atencion al Cliente",
+        text:"Ingresa Correo Electronico",
+        input:"text",
+        inputValidator:(value)=>{
+            if(!value){
+                return "Necesitas ingresar tu Correo Electronico"
+            }
         }
+    })
+    .then(username=>{
+        usuario=username.value
+        nombreUsuario.innerHTML=usuario
+        socketClient.emit("nuevousuario",usuario)
+    })
+}
+
+function scrollToBottom() {
+    const chatContainer = document.getElementById("chat-messages");
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+}
+
+formulario.onsubmit=(e)=>{
+    e.preventDefault()
+    const info={
+        user:usuario,
+        message:inputmensaje.value
     }
+    console.log(info)
+    socketClient.emit("mensaje",info)
+    inputmensaje.value=" "
+    scrollToBottom()
+}
+
+socketClient.on("chat", mensajes => {
+
+    const chatRender = mensajes.map(mensaje => {
+        const fechaCreacion = new Date(mensaje.createdAt);
+        const opcionesHora = { hour: '2-digit', minute: '2-digit'};
+        const horaFormateada = fechaCreacion.toLocaleTimeString(undefined, opcionesHora);
+        return `<p class="message-container"><strong>${horaFormateada}</strong> - <strong>${mensaje.user}</strong>: ${mensaje.message}</p>`;
+    }).join("");
+    chat.innerHTML = chatRender;
+});
+
+
+socketClient.on("broadcast",usuario=>{
+    Toastify({
+        text:`Ingreso ${usuario} al chat`,
+        duration:5000,
+        position:'right',
+        style: {
+            background: "linear-gradient(to right, #00b09b, #96c93d)",
+        }
+    }).showToast()
 })
 
-socket.on('messageLogs', data => {
-    let messageLogs = document.querySelector('#messageLogs')
-    let mensajes = ''
-    data.forEach(mensaje => {
-        mensajes += `<li>${mensaje.user} dice: ${mensaje.message}</li>`
-    }); 
-    messageLogs.innerHTML = mensajes
-} )
 
-
+ // Manejo del clic en el botón "Vaciar Chat"
+document.getElementById("clearChat").addEventListener("click", () => {
+    // Borrar el contenido del chat en el cliente
+    document.getElementById("chat").textContent = "";
+    
+    // Emitir el evento "clearchat" al servidor usando socketClient
+    socketClient.emit("clearchat");
+});

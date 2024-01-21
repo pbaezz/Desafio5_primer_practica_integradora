@@ -1,12 +1,13 @@
-import ProductManager from "../dao/ProductManager.js";
+//import ProductManager from "../dao/controllers/fs/ProductManager.js";
+
+import ProductManager from "../dao/controllers/mongo/ProductManagerMongo.js";
 import { __dirname } from "../utils.js";
-const pm = new ProductManager(__dirname+'/dao/database/products.json')
+const pm = new ProductManager()
 
 const socketProducts = (socketServer) => {
     socketServer.on("connection",async(socket)=>{
         console.log("client connected con ID:",socket.id)
         const listadeproductos=await pm.getProductsView()
-        console.log(listadeproductos)
 
         socketServer.emit("enviodeproducts",listadeproductos)
 
