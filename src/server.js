@@ -4,6 +4,7 @@ import handlebars from 'express-handlebars'
 import { Server } from 'socket.io'
 
 import productsRouter from './routes/products.routes.js'
+import { cartsRouter } from './routes/carts.routes.js'
 import viewsRouter from './routes/views.routes.js'
 import socketProducts from './listeners/socketProducts.js'
 import socketChat from './listeners/socketMesagges.js'
@@ -18,7 +19,7 @@ server.use(express.static(__dirname+'/public'))
 server.use(express.json())
 server.use(express.urlencoded({extended:true}))
 
-
+server.use('/api',cartsRouter)
 server.use('/api', productsRouter)
 server.use('/', viewsRouter)
 
